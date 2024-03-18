@@ -1,49 +1,48 @@
-import RPi.GPIO as GPIO
-import time
+import cv2
+# test preview
 
-# Definición de pines GPIO
-pulso = 23
-intervalo = 24
+# Función para decodificar el código QR
+def decodificar_qr(imagen):
+    # Cargamos el detector de códigos QR
+    detector_qr = cv2.QRCodeDetector()
 
-# Configuración de pines
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(pulso, GPIO.OUT)
-GPIO.setup(intervalo, GPIO.OUT)
+    # Detectamos el código QR en la imagen
+    datos_qr, puntos_qr, _ = detector_qr.detectAndDecode(imagen)
 
-# Función para generar un pulso
-def generar_pulso(duracion):
-    GPIO.output(pulso, GPIO.HIGH)
-    time.sleep(duracion / 1000)
-    GPIO.output(pulso, GPIO.LOW)
+    return datos_qr
 
-# Función para generar un intervalo
-def generar_intervalo():
-    GPIO.output(intervalo, GPIO.HIGH)
-    time.sleep(0.1)
-    GPIO.output(intervalo, GPIO.LOW)
+# Función para mostrar la vista previa de la cámara
+def mostrar_vista_previa(camara):
+    while True:
+        # Capturamos la imagen de la cámara
+        ret, imagen = camara.read()
 
-# Diccionario con las duraciones de pulso
-duraciones = {
-    "25ms": 25,
-    "45ms": 45,
-    "65ms": 65,
-    "100ms": 100
-}
+        # Mostramos la imagen en pantalla
+        cv2.imshow("Vista previa", imagen)
 
-# Bucle principal
+        # Salimos del bucle si se presiona la tecla "q"
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            break
+
+# Configuramos la cámara
+camara = cv2.VideoCapture(0)
+
+# Mostramos la vista previa de la cámara
+mostrar_vista_previa(camara)
+
+# Bucle para leer el código QR
 while True:
-    # Ingreso del número
-    numero = input("Ingrese un número (1-4): ")
+    # Capturamos la imagen de la cámara
+    ret, imagen = camara.read()
 
-    # Validación del número
-    if not numero.isdigit() or int(numero) < 1 or int(numero) > 4:
-        print("Número no válido. Ingrese un número entre 1 y 4.")
-        continue
+    # Decodificamos el código QR en la imagen
+    datos_qr = decodificar_qr(imagen)
 
-    # Generación de pulsos y intervalos
-    for i in range(4):
-        generar_pulso(duraciones[f"{numero}ms"])
-        generar_intervalo()
+    # Si se encontró un código QR, imprimimos su valor
+    if datos_qr:
+        print("Valor del código QR:", datos_qr)
+        break
 
-# Limpieza de pines
-GPIO.cleanup()
+# Liberamos la cámara
+camara.release()
+cv2.destroyAllWindows()
