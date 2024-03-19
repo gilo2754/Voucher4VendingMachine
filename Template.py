@@ -1,48 +1,36 @@
 import cv2
-# test preview
+from pyzbar.pyzbar import decode
 
-# Función para decodificar el código QR
-def decodificar_qr(imagen):
-    # Cargamos el detector de códigos QR
-    detector_qr = cv2.QRCodeDetector()
+def read_qr_code(image):
+    # Convert image to grayscale
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    # Detectamos el código QR en la imagen
-    datos_qr, puntos_qr, _ = detector_qr.detectAndDecode(imagen)
+    # Use OpenCV to detect QR codes
+    decoded_objects = decode(gray)
 
-    return datos_qr
+    # If QR codes are detected, return their data
+    if decoded_objects:
+        for obj in decoded_objects:
+            print("Data:", obj.data.decode())
+    else:
+        print("No QR code detected")
 
-# Función para mostrar la vista previa de la cámara
-def mostrar_vista_previa(camara):
-    while True:
-        # Capturamos la imagen de la cámara
-        ret, imagen = camara.read()
+# Capture video from the Raspberry Pi camera
+cap = cv2.VideoCapture(0)
 
-        # Mostramos la imagen en pantalla
-        cv2.imshow("Vista previa", imagen)
-
-        # Salimos del bucle si se presiona la tecla "q"
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            break
-
-# Configuramos la cámara
-camara = cv2.VideoCapture(0)
-
-# Mostramos la vista previa de la cámara
-mostrar_vista_previa(camara)
-
-# Bucle para leer el código QR
 while True:
-    # Capturamos la imagen de la cámara
-    ret, imagen = camara.read()
+    ret, frame = cap.read()
 
-    # Decodificamos el código QR en la imagen
-    datos_qr = decodificar_qr(imagen)
+    # Display the captured frame
+    cv2.imshow('frame', frame)
 
-    # Si se encontró un código QR, imprimimos su valor
-    if datos_qr:
-        print("Valor del código QR:", datos_qr)
+    # Check for QR codes in the frame
+    read_qr_code(frame)
+
+    if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-# Liberamos la cámara
-camara.release()
+cap.release()
 cv2.destroyAllWindows()
+
+
